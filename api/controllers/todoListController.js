@@ -1,32 +1,43 @@
 'use strict';
 
-
-var mongoose = require('mongoose'),
-    Task = mongoose.model('Tasks');
+var Task = require('../models/todoListModel');
 
 exports.list_all_tasks = function (req, res) {
-    Task.find({}, function (err, task) {
+    Task.getAllTask(function (err, task) {
+
+        console.log('controller')
         if (err)
             res.send(err);
-        res.json(task);
+        // console.log('res', task);
+        res.send(task);
     });
 };
-
 
 
 
 exports.create_a_task = function (req, res) {
     var new_task = new Task(req.body);
-    new_task.save(function (err, task) {
-        if (err)
-            res.send(err);
-        res.json(task);
-    });
+
+    //handles null error 
+    if (!new_task.task || !new_task.status) {
+
+        res.status(400).send({ error: true, message: 'Please provide task/status' });
+
+    }
+    else {
+
+        Task.createTask(new_task, function (err, task) {
+
+            if (err)
+                res.send(err);
+            res.json(task);
+        });
+    }
 };
 
 
 exports.read_a_task = function (req, res) {
-    Task.findById(req.params.taskId, function (err, task) {
+    Task.getTaskById(req.params.taskId, function (err, task) {
         if (err)
             res.send(err);
         res.json(task);
@@ -35,7 +46,7 @@ exports.read_a_task = function (req, res) {
 
 
 exports.update_a_task = function (req, res) {
-    Task.findOneAndUpdate({ _id: req.params.taskId }, req.body, { new: true }, function (err, task) {
+    Task.updateById(req.params.taskId, new Task(req.body), function (err, task) {
         if (err)
             res.send(err);
         res.json(task);
@@ -46,9 +57,7 @@ exports.update_a_task = function (req, res) {
 exports.delete_a_task = function (req, res) {
 
 
-    Task.remove({
-        _id: req.params.taskId
-    }, function (err, task) {
+    Task.remove(req.params.taskId, function (err, task) {
         if (err)
             res.send(err);
         res.json({ message: 'Task successfully deleted' });
